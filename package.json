@@ -1,0 +1,36 @@
+{
+  "name": "node",
+  "version": "1.0.0",
+  "description": "API TPUBERS",
+  "main": "server.js",
+  "dependencies": {
+    "@fastify/cors": "^8.2.0",
+    "@prisma/client": "latest",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "fastify": "^4.11.0",
+    "http": "^0.0.1-security",
+    "moment": "^2.29.4",
+    "prisma": "^4.7.1",
+    "puppeteer": "^19.4.0",
+    "socket.io": "^4.5.4"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tonny-tris/apitpubers.git"
+  },
+  "keywords": [
+    "API"
+  ],
+  "author": "Tonny Tris Haripurwanto, A.Md",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tonny-tris/apitpubers/issues"
+  },
+  "homepage": "https://github.com/tonny-tris/apitpubers#readme"
+}

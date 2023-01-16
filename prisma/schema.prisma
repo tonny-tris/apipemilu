@@ -1,0 +1,910 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model auth_assignment {
+  item_name  String    @db.VarChar(64)
+  user_id    String    @db.VarChar(64)
+  created_at Int?
+  auth_item  auth_item @relation(fields: [item_name], references: [name], onDelete: Cascade, map: "auth_assignment_ibfk_1")
+
+  @@id([item_name, user_id])
+  @@index([user_id], map: "idx-auth_assignment-user_id")
+}
+
+model auth_item {
+  name                                              String            @id @db.VarChar(64)
+  type                                              Int               @db.SmallInt
+  description                                       String?           @db.Text
+  rule_name                                         String?           @db.VarChar(64)
+  data                                              Bytes?            @db.Blob
+  created_at                                        Int?
+  updated_at                                        Int?
+  auth_assignment                                   auth_assignment[]
+  auth_rule                                         auth_rule?        @relation(fields: [rule_name], references: [name], map: "auth_item_ibfk_1")
+  auth_item_child_auth_itemToauth_item_child_parent auth_item_child[] @relation("auth_itemToauth_item_child_parent")
+  auth_item_child_auth_itemToauth_item_child_child  auth_item_child[] @relation("auth_itemToauth_item_child_child")
+
+  @@index([type], map: "idx-auth_item-type")
+  @@index([rule_name], map: "rule_name")
+}
+
+model auth_item_child {
+  parent                                      String    @db.VarChar(64)
+  child                                       String    @db.VarChar(64)
+  auth_item_auth_itemToauth_item_child_parent auth_item @relation("auth_itemToauth_item_child_parent", fields: [parent], references: [name], onDelete: Cascade, map: "auth_item_child_ibfk_1")
+  auth_item_auth_itemToauth_item_child_child  auth_item @relation("auth_itemToauth_item_child_child", fields: [child], references: [name], onDelete: Cascade, map: "auth_item_child_ibfk_2")
+
+  @@id([parent, child])
+  @@index([child], map: "child")
+}
+
+model auth_rule {
+  name       String      @id @db.VarChar(64)
+  data       Bytes?      @db.Blob
+  created_at Int?
+  updated_at Int?
+  auth_item  auth_item[]
+}
+
+model info {
+  id                       Int    @id @default(autoincrement()) @db.UnsignedInt
+  app_code                 String @db.VarChar(25)
+  app_name                 String @db.VarChar(255)
+  app_version              String @db.VarChar(255)
+  app_description          String @db.VarChar(255)
+  app_url                  String @db.VarChar(255)
+  app_releaseyear          Int    @default(2022)
+  app_logodefault          String @db.VarChar(255)
+  app_logomini             String @db.VarChar(255)
+  app_logomobile           String @db.VarChar(255)
+  app_bglogin              String @default("-") @db.VarChar(255)
+  app_docs                 String @default("#") @db.VarChar(255)
+  creator_code             String @db.VarChar(25)
+  creator_name             String @db.VarChar(255)
+  creator_description      String @default("-") @db.VarChar(255)
+  creator_url              String @default("#") @db.VarChar(255)
+  creator_phone            String @db.VarChar(255)
+  creator_logo             String @db.VarChar(255)
+  is_dashboard_sidebarmenu Int    @default(1)
+  is_dashboard_navbarmenu  Int    @default(0)
+  is_dashboard_chat        Int    @default(0)
+  user_key                 String @db.VarChar(25)
+  base_webview             String @default("-") @db.VarChar(255)
+  base_api                 String @default("-") @db.VarChar(255)
+  max_koreksi              Int    @default(2)
+}
+
+model menu {
+  id                        Int         @id @default(autoincrement()) @db.UnsignedInt
+  menu                      String      @unique(map: "unMenu") @db.VarChar(25)
+  description               String      @db.VarChar(255)
+  icon                      String      @default("-") @db.VarChar(255)
+  icon_image                String      @default("-") @db.VarChar(255)
+  url                       String      @default("#") @db.VarChar(255)
+  is_active                 Int         @default(1)
+  is_parent                 Int         @default(0)
+  sort                      Int
+  parent_id                 String?     @db.VarChar(25)
+  module_id                 String?     @db.VarChar(25)
+  module                    module?     @relation(fields: [module_id], references: [module], map: "fkMenuModuleID")
+  menu_menuTomenu_parent_id menu?       @relation("menuTomenu_parent_id", fields: [parent_id], references: [menu], onDelete: Cascade, map: "fkMenuParentMenuID")
+  other_menu                menu[]      @relation("menuTomenu_parent_id")
+  role_menu                 role_menu[]
+  user_menu                 user_menu[]
+
+  @@index([module_id], map: "fkMenuModuleID")
+  @@index([parent_id], map: "fkMenuParentMenuID")
+}
+
+model migration {
+  version    String @id @db.VarChar(180)
+  apply_time Int?
+}
+
+model module {
+  id          Int           @id @default(autoincrement()) @db.UnsignedInt
+  module      String        @unique(map: "unModuleID") @db.VarChar(25)
+  description String        @default("-") @db.VarChar(255)
+  icon        String        @default("-") @db.VarChar(255)
+  icon_image  String        @default("-") @db.VarChar(255)
+  url         String        @default("#") @db.VarChar(255)
+  sort        Int
+  is_active   Int           @default(1)
+  menu        menu[]
+  role_module role_module[]
+  user_module user_module[]
+}
+
+model role {
+  id                Int           @id @default(autoincrement()) @db.UnsignedInt
+  role              String        @unique(map: "unRole") @db.VarChar(25)
+  description       String        @db.VarChar(255)
+  icon              String        @default("-") @db.VarChar(255)
+  icon_image        String        @default("-") @db.VarChar(255)
+  default_dashboard String        @default("-") @db.VarChar(255)
+  default_form      String        @db.VarChar(255)
+  is_active         Int           @default(1)
+  role_menu         role_menu[]
+  role_module       role_module[]
+  user              user[]
+}
+
+model role_menu {
+  id      Int    @id @default(autoincrement()) @db.UnsignedInt
+  role_id String @db.VarChar(25)
+  menu_id String @db.VarChar(25)
+  menu    menu   @relation(fields: [menu_id], references: [menu], onDelete: Cascade, map: "fkRoleMenuMenuID")
+  role    role   @relation(fields: [role_id], references: [role], onDelete: Cascade, map: "fkRoleMenuRoleID")
+
+  @@index([menu_id], map: "fkRoleMenuMenuID")
+  @@index([role_id], map: "fkRoleMenuRoleID")
+}
+
+model role_module {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  role_id   String @db.VarChar(25)
+  module_id String @db.VarChar(25)
+  module    module @relation(fields: [module_id], references: [module], onDelete: Cascade, map: "fkRoleModuleModuleID")
+  role      role   @relation(fields: [role_id], references: [role], onDelete: Cascade, map: "fkRoleModuleRoleID")
+
+  @@index([module_id], map: "fkRoleModuleModuleID")
+  @@index([role_id], map: "fkRoleModuleRoleID")
+}
+
+model route {
+  name   String @id @db.VarChar(64)
+  alias  String @db.VarChar(64)
+  type   String @db.VarChar(64)
+  status Int    @default(1) @db.SmallInt
+}
+
+model user {
+  id                   Int            @id @default(autoincrement()) @db.UnsignedInt
+  username             String         @unique(map: "unUsername") @db.VarChar(25)
+  password_hash        String         @db.VarChar(255)
+  fullname             String         @db.VarChar(255)
+  auth_key             String         @default("-") @db.VarChar(255)
+  password_reset_token String         @default("-") @db.VarChar(255)
+  status               String         @default("10") @db.VarChar(5)
+  email                String         @default("-") @db.VarChar(255)
+  photo                String         @default("/layouts/media/baliklayarid/user.png") @db.VarChar(255)
+  role_id              String         @db.VarChar(25)
+  nowa                 String         @db.VarChar(25)
+  client_id            String?        @db.VarChar(25)
+  is_btn_form          Int            @default(1) @map("_is_btn_form")
+  is_btn_final         Int            @default(1) @map("_is_btn_final")
+  created_at           DateTime       @default(now()) @db.DateTime(0)
+  updated_at           DateTime?      @default(now()) @db.DateTime(0)
+  pemilu_final         pemilu_final[]
+  pemilu_user          pemilu_user[]
+  client               client?        @relation(fields: [client_id], references: [client], map: "fkUserClientID")
+  role                 role           @relation(fields: [role_id], references: [role], onDelete: Cascade, map: "fkUserRoleIdn")
+  user_korcam          user_korcam[]
+  user_kordes          user_kordes[]
+  user_mc              user_mc[]
+  user_menu            user_menu[]
+  user_module          user_module[]
+  user_partai          user_partai[]
+  user_pemilih         user_pemilih[]
+  user_tps             user_tps[]
+
+  @@index([role_id], map: "fkUserRoleIdn")
+  @@index([client_id], map: "fkUserClientID")
+}
+
+model user_menu {
+  id      Int    @id @default(autoincrement()) @db.UnsignedInt
+  user_id String @db.VarChar(25)
+  menu_id String @db.VarChar(25)
+  menu    menu   @relation(fields: [menu_id], references: [menu], onDelete: Cascade, map: "fkUserMenuMenuID")
+  user    user   @relation(fields: [user_id], references: [username], onDelete: Cascade, map: "fkUserMenuUserID")
+
+  @@index([menu_id], map: "fkUserMenuMenuID")
+  @@index([user_id], map: "fkUserMenuUserID")
+}
+
+model user_module {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  user_id   String @db.VarChar(25)
+  module_id String @db.VarChar(25)
+  module    module @relation(fields: [module_id], references: [module], onDelete: Cascade, map: "fkUserMdouleModuleID")
+  user      user   @relation(fields: [user_id], references: [username], onDelete: Cascade, map: "fkUserModuleUserID")
+
+  @@index([user_id], map: "fkUserModuleUserID")
+  @@index([module_id], map: "fkUserMdouleModuleID")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model analisa {
+  kecamatan  String   @db.VarChar(255)
+  desa       String   @db.VarChar(255)
+  kk         String   @db.VarChar(255)
+  nik        String   @db.VarChar(255)
+  nama       String   @db.VarChar(255)
+  tmplahir   String   @db.VarChar(255)
+  tgllahir   DateTime @db.Date
+  jk         String   @db.VarChar(2)
+  sts        String   @db.VarChar(2)
+  alamat     String   @db.VarChar(255)
+  rt         String   @db.VarChar(255)
+  rw         String   @db.VarChar(255)
+  tps        String   @db.VarChar(25)
+  no_urut    String   @db.VarChar(25)
+  rtwr       String?  @map("_rtwr") @db.VarChar(25)
+  invalid    String?  @default("1") @map("_invalid") @db.VarChar(25)
+  normal1    String?  @map("_normal1") @db.VarChar(255)
+  kl1        String?  @map("_kl1") @db.VarChar(255)
+  ka1        String?  @map("_ka1") @db.VarChar(255)
+  normal2    String?  @map("_normal2") @db.VarChar(255)
+  kl2        String?  @map("_kl2") @db.VarChar(255)
+  ka2        String?  @map("_ka2") @db.VarChar(255)
+  kriteria   String?  @map("_kriteria") @db.VarChar(255)
+  nokasus    String?  @map("_nokasus") @db.VarChar(11)
+  upload_kab String?  @default("SITUBONDO") @db.VarChar(255)
+
+  @@map("_analisa")
+  @@ignore
+}
+
+model pemilih {
+  id_pemilih        Int    @id @default(autoincrement()) @db.UnsignedInt
+  propinsi          String @db.VarChar(50)
+  kabupaten         String @db.VarChar(50)
+  id_kecamatan      String @db.VarChar(25)
+  id_desa           String @db.VarChar(25)
+  no_kk             String @db.VarChar(16)
+  nik               String @db.VarChar(16)
+  nama_pemilih      String @db.VarChar(50)
+  tmptlahir_pemilih String @db.VarChar(35)
+  tgllahir_pemilih  String @db.VarChar(255)
+  jk                String @db.VarChar(1)
+  status            String @db.VarChar(1)
+  alamat            String @db.VarChar(80)
+  rt                String @db.VarChar(5)
+  rw                String @db.VarChar(5)
+  tps               String @db.VarChar(5)
+  no_urut           String @db.VarChar(3)
+  agama             String @db.VarChar(8)
+  status_kawin      String @db.VarChar(14)
+  pekerjaan         String @db.VarChar(35)
+  status_kerja      String @db.VarChar(25)
+  no_hp             String @db.VarChar(13)
+  whatsapp          String @db.VarChar(13)
+  email             String @db.VarChar(35)
+  status_pemilih    String @db.VarChar(15)
+  foto_ktp          String @db.VarChar(100)
+  foto_pemilih      String @db.VarChar(100)
+  id_user           Int
+
+  @@map("_pemilih")
+  @@index([id_desa])
+}
+
+model saksi {
+  id        Int     @id @default(autoincrement()) @db.UnsignedInt
+  kecamatan String? @db.VarChar(50)
+  desa      String? @db.VarChar(50)
+  tps       String? @db.VarChar(50)
+  nohp      String? @db.VarChar(50)
+  nama      String? @db.VarChar(100)
+  level     Int?
+  desa_id   String? @db.VarChar(25)
+  injected  Int     @default(0)
+
+  @@map("_saksi")
+}
+
+model tbdesa {
+  id_desa      Int    @default(autoincrement())
+  id_kecamatan Int
+  nama_desa    String @db.VarChar(40)
+  jumlah_desa  Int
+  jumlah_tps   Int
+
+  @@id([id_desa, id_kecamatan])
+  @@map("_tbdesa")
+}
+
+model tbkabupaten {
+  id_kabupaten   Int    @default(autoincrement())
+  id_propinsi    Int
+  nama_kabupaten String @db.VarChar(40)
+  jumlah_k       String @db.VarChar(10)
+
+  @@id([id_kabupaten, id_propinsi])
+  @@map("_tbkabupaten")
+}
+
+model tbkecamatan {
+  id_kecamatan   Int    @default(autoincrement())
+  id_kabupaten   Int
+  nama_kecamatan String @db.VarChar(40)
+  jumlah_kec     Int
+
+  @@id([id_kecamatan, id_kabupaten])
+  @@map("_tbkecamatan")
+}
+
+model analisa_check {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  kecamatan  String   @db.VarChar(255)
+  desa       String   @db.VarChar(255)
+  kk         String   @db.VarChar(255)
+  nik        String   @db.VarChar(255)
+  nama       String   @db.VarChar(255)
+  tmplahir   String   @db.VarChar(255)
+  tgllahir   DateTime @db.Date
+  jk         String   @db.VarChar(2)
+  sts        String   @db.VarChar(2)
+  alamat     String   @db.VarChar(255)
+  rt         String   @db.VarChar(255)
+  rw         String   @db.VarChar(255)
+  tps        String   @db.VarChar(25)
+  no_urut    String   @db.VarChar(25)
+  rtwr       String?  @map("_rtwr") @db.VarChar(25)
+  invalid    String?  @default("1") @map("_invalid") @db.VarChar(25)
+  normal1    String?  @map("_normal1") @db.VarChar(255)
+  kl1        String?  @map("_kl1") @db.VarChar(255)
+  ka1        String?  @map("_ka1") @db.VarChar(255)
+  normal2    String?  @map("_normal2") @db.VarChar(255)
+  kl2        String?  @map("_kl2") @db.VarChar(255)
+  ka2        String?  @map("_ka2") @db.VarChar(255)
+  kriteria   String?  @map("_kriteria") @db.VarChar(255)
+  nokasus    String?  @map("_nokasus") @db.VarChar(11)
+  upload_kab String?  @default("SITUBONDO") @db.VarChar(255)
+}
+
+model analisa_fields {
+  id                      Int                       @id @default(autoincrement()) @db.UnsignedInt
+  field                   String                    @unique(map: "unfields") @db.VarChar(25)
+  arrname                 String                    @db.VarChar(25)
+  analisa_kriteria_fields analisa_kriteria_fields[]
+}
+
+model analisa_kriteria {
+  id                      Int                       @id @default(autoincrement()) @db.UnsignedInt
+  kriteria                String                    @unique(map: "unkategori") @db.VarChar(25)
+  analisa_kriteria_fields analisa_kriteria_fields[]
+}
+
+model analisa_kriteria_fields {
+  id               Int              @id @default(autoincrement()) @db.UnsignedInt
+  kriteria_id      String           @db.VarChar(25)
+  field_id         Int              @db.UnsignedInt
+  analisa_fields   analisa_fields   @relation(fields: [field_id], references: [id], onDelete: Cascade, map: "fkkFfieldID")
+  analisa_kriteria analisa_kriteria @relation(fields: [kriteria_id], references: [kriteria], onDelete: Cascade, map: "fkkFkritriaID")
+
+  @@index([field_id], map: "fkkFfieldID")
+  @@index([kriteria_id], map: "fkkFkritriaID")
+}
+
+model caleg {
+  id                 Int                  @id @default(autoincrement()) @db.UnsignedInt
+  nama               String               @db.VarChar(100)
+  jnskelamin         caleg_jnskelamin
+  alamat             String               @default("-") @db.VarChar(255)
+  motto              String               @default("-") @db.VarChar(255)
+  photo              String               @default("#") @db.VarChar(255)
+  parpol_id          String               @db.VarChar(25)
+  parpol             parpol               @relation(fields: [parpol_id], references: [parpol], onDelete: Cascade, map: "fkCalegParpolID")
+  pemilu_caleg       pemilu_caleg[]
+  pemilu_suara_caleg pemilu_suara_caleg[]
+
+  @@index([parpol_id], map: "fkCalegParpolID")
+}
+
+model capres {
+  id                  Int                   @id @default(autoincrement()) @db.UnsignedInt
+  nama                String                @db.VarChar(255)
+  photo               String                @db.VarChar(255)
+  capres_detail       capres_detail[]
+  pemilu_capres       pemilu_capres[]
+  pemilu_suara_capres pemilu_suara_capres[]
+}
+
+model capres_detail {
+  id        Int                  @id @default(autoincrement()) @db.UnsignedInt
+  nama      String               @db.VarChar(255)
+  tgl_lahir DateTime             @db.Date
+  partai    String               @db.VarChar(255)
+  photo     String               @default("#") @db.VarChar(255)
+  status    capres_detail_status
+  capres_id Int                  @db.UnsignedInt
+  capres    capres               @relation(fields: [capres_id], references: [id], onDelete: Cascade, map: "fkCDEcapresID")
+
+  @@index([capres_id], map: "fkCDEcapresID")
+}
+
+model client {
+  id              Int    @id @default(autoincrement()) @db.UnsignedInt
+  client          String @unique(map: "unClient") @db.VarChar(25)
+  name            String @db.VarChar(100)
+  address         String @default("-") @db.VarChar(255)
+  phone           String @default("-") @db.VarChar(255)
+  email           String @default("-") @db.VarChar(100)
+  logo            String @default("#") @db.VarChar(255)
+  logo_background String @default("#") @db.VarChar(255)
+  user            user[]
+}
+
+model dapil {
+  id              Int               @id @default(autoincrement()) @db.UnsignedInt
+  dapil           String            @db.VarChar(255)
+  dapil_kecamatan dapil_kecamatan[]
+}
+
+model dapil_kecamatan {
+  id           Int        @id @default(autoincrement()) @db.UnsignedInt
+  dapil_id     Int        @db.UnsignedInt
+  kecamatan_id String?    @db.VarChar(25)
+  dapil        dapil      @relation(fields: [dapil_id], references: [id], onDelete: Cascade, map: "fkDAKdapilID")
+  kecamatan    kecamatan? @relation(fields: [kecamatan_id], references: [id], map: "fkDAKkecID")
+
+  @@index([dapil_id], map: "fkDAKdapilID")
+  @@index([kecamatan_id], map: "fkDAKkecID")
+}
+
+model desa {
+  id           String        @id @db.VarChar(25)
+  desa         String        @db.VarChar(100)
+  kecamatan_id String        @db.VarChar(25)
+  kecamatan    kecamatan     @relation(fields: [kecamatan_id], references: [id], onDelete: Cascade, map: "fkDesaKecamatanID")
+  tps          tps[]
+  user_kordes  user_kordes[]
+
+  @@index([kecamatan_id], map: "fkDesaKecamatanID")
+}
+
+model jenis {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  jenis      String   @unique(map: "unJenis") @db.VarChar(25)
+  deskripsi  String   @db.VarChar(255)
+  keterangan String   @db.VarChar(255)
+  stamp      DateTime @default(now()) @db.DateTime(0)
+  pemilu     pemilu[]
+}
+
+model kabupaten {
+  id           String         @id @db.VarChar(25)
+  kabupaten    String         @db.VarChar(100)
+  provinsi_id  String         @db.VarChar(25)
+  provinsi     provinsi       @relation(fields: [provinsi_id], references: [id], onDelete: Cascade, map: "fkKabupatenProvinsiID")
+  kecamatan    kecamatan[]
+  user_mc      user_mc[]
+  user_partai  user_partai[]
+  user_pemilih user_pemilih[]
+
+  @@index([provinsi_id], map: "fkKabupatenProvinsiID")
+}
+
+model kecamatan {
+  id              String            @id @db.VarChar(25)
+  kecamatan       String            @db.VarChar(100)
+  kabupaten_id    String            @db.VarChar(25)
+  dapil_kecamatan dapil_kecamatan[]
+  desa            desa[]
+  kabupaten       kabupaten         @relation(fields: [kabupaten_id], references: [id], onDelete: Cascade, map: "fkKecamatanKabupatenID")
+  user_korcam     user_korcam[]
+
+  @@index([kabupaten_id], map: "fkKecamatanKabupatenID")
+}
+
+model operator {
+  id                Int       @id @default(autoincrement())
+  opd_id            Int?
+  kec_id            String?   @db.VarChar(100)
+  desa_id           String?   @db.VarChar(100)
+  photo             String?   @db.VarChar(255)
+  name              String    @db.VarChar(200)
+  contact_no        String    @db.VarChar(200)
+  email             String    @db.VarChar(200)
+  password          String    @db.VarChar(250)
+  key               String    @db.VarChar(255)
+  is_active         Int
+  last_login        DateTime? @db.DateTime(0)
+  verification_code String    @db.VarChar(100)
+  created_at        DateTime? @db.DateTime(0)
+  updated_at        DateTime? @db.DateTime(0)
+  remember_token    String?   @db.VarChar(255)
+  device_token      String?   @db.VarChar(255)
+}
+
+model operator_roles {
+  id         Int      @id @default(autoincrement())
+  role_id    Int?
+  staff_id   Int?
+  is_active  Int?     @default(0)
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @db.DateTime(0)
+
+  @@index([role_id], map: "role_id")
+  @@index([staff_id], map: "staff_id")
+}
+
+model parpol {
+  id                 Int                  @id @default(autoincrement()) @db.UnsignedInt
+  parpol             String               @unique(map: "unparpol") @db.VarChar(25)
+  deskripsi          String               @db.VarChar(100)
+  logo               String               @default("-") @db.VarChar(255)
+  weblogo            String               @default("-") @db.VarChar(255)
+  urut               Int
+  caleg              caleg[]
+  pemilu_suara_caleg pemilu_suara_caleg[]
+  user_partai        user_partai[]
+}
+
+model pemilu {
+  id                  Int                   @id @default(autoincrement()) @db.UnsignedInt
+  kegiatan            String                @db.VarChar(100)
+  tanggal_awal        DateTime              @db.Date
+  tanggal_akhir       DateTime              @db.Date
+  jenis_id            String                @db.VarChar(25)
+  deskripsi           String                @db.VarChar(255)
+  photo               String?               @default("#") @db.VarChar(255)
+  stamp               DateTime              @default(now()) @db.DateTime(0)
+  jenis               jenis                 @relation(fields: [jenis_id], references: [jenis], onDelete: Cascade, map: "fkPemiluJenisID")
+  pemilu_caleg        pemilu_caleg[]
+  pemilu_capres       pemilu_capres[]
+  pemilu_dpt          pemilu_dpt[]
+  pemilu_final        pemilu_final[]
+  pemilu_suara_caleg  pemilu_suara_caleg[]
+  pemilu_suara_capres pemilu_suara_capres[]
+  pemilu_user         pemilu_user[]
+
+  @@index([jenis_id], map: "fkPemiluJenisID")
+}
+
+model pemilu_caleg {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  pemilu_id Int    @db.UnsignedInt
+  caleg_id  Int    @db.UnsignedInt
+  caleg     caleg  @relation(fields: [caleg_id], references: [id], onDelete: Cascade, map: "fkPemiluCalegCalegID")
+  pemilu    pemilu @relation(fields: [pemilu_id], references: [id], onDelete: Cascade, map: "fkPemiluCalegPemiluID")
+
+  @@index([caleg_id], map: "fkPemiluCalegCalegID")
+  @@index([pemilu_id], map: "fkPemiluCalegPemiluID")
+}
+
+model pemilu_capres {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  pemilu_id Int    @db.UnsignedInt
+  capres_id Int    @db.UnsignedInt
+  capres    capres @relation(fields: [capres_id], references: [id], onDelete: Cascade, map: "fkPCAcapresID")
+  pemilu    pemilu @relation(fields: [pemilu_id], references: [id], onDelete: Cascade, map: "fkPCApemiluID")
+
+  @@index([capres_id], map: "fkPCAcapresID")
+  @@index([pemilu_id], map: "fkPCApemiluID")
+}
+
+model pemilu_dpt {
+  id         Int    @id @default(autoincrement()) @db.UnsignedInt
+  pemilu_id  Int    @db.UnsignedInt
+  tps_id     Int    @db.UnsignedInt
+  jumlah_dpt Int    @default(0)
+  pemilu     pemilu @relation(fields: [pemilu_id], references: [id], onDelete: Cascade, map: "fkPemiluDptPemiluID")
+  tps        tps    @relation(fields: [tps_id], references: [id], onDelete: Cascade, map: "fkPemiluDptTpsID")
+
+  @@index([pemilu_id], map: "fkPemiluDptPemiluID")
+  @@index([tps_id], map: "fkPemiluDptTpsID")
+}
+
+model pemilu_final {
+  id          Int       @id @default(autoincrement()) @db.UnsignedInt
+  pemilu_id   Int       @db.UnsignedInt
+  tps_id      Int       @db.UnsignedInt
+  bukti_plano String    @db.VarChar(255)
+  bukti_csatu String    @db.VarChar(255)
+  user_id     String    @db.VarChar(25)
+  stamp       DateTime? @default(now()) @db.DateTime(0)
+  pemilu      pemilu    @relation(fields: [pemilu_id], references: [id], onDelete: Cascade, map: "fkPemiluFinalPemiluID")
+  tps         tps       @relation(fields: [tps_id], references: [id], onDelete: Cascade, map: "fkPemiluFinalTpsID")
+  user        user      @relation(fields: [user_id], references: [username], onDelete: Cascade, map: "fkPemiluFinalUserID")
+
+  @@index([pemilu_id], map: "fkPemiluFinalPemiluID")
+  @@index([tps_id], map: "fkPemiluFinalTpsID")
+  @@index([user_id], map: "fkPemiluFinalUserID")
+}
+
+model pemilu_suara_caleg {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  kodesuara String @default("-") @db.VarChar(255)
+  pemilu_id Int    @db.UnsignedInt
+  tps_id    Int    @db.UnsignedInt
+  parpol_id String @db.VarChar(25)
+  caleg_id  Int?   @db.UnsignedInt
+  jumlah    Int    @default(0)
+  caleg     caleg? @relation(fields: [caleg_id], references: [id], onDelete: Cascade, map: "fkPemiluSuaraCalegID")
+  parpol    parpol @relation(fields: [parpol_id], references: [parpol], onDelete: Cascade, map: "fkPemiluSuaraParpolID")
+  pemilu    pemilu @relation(fields: [pemilu_id], references: [id], onDelete: Cascade, map: "fkPemiluSuaraPemiluID")
+  tps       tps    @relation(fields: [tps_id], references: [id], onDelete: Cascade, map: "fkPemiluSuaraTpsID")
+
+  @@index([caleg_id], map: "fkPemiluSuaraCalegID")
+  @@index([parpol_id], map: "fkPemiluSuaraParpolID")
+  @@index([pemilu_id], map: "fkPemiluSuaraPemiluID")
+  @@index([tps_id], map: "fkPemiluSuaraTpsID")
+}
+
+model pemilu_suara_capres {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  kodesuara String @default("-") @db.VarChar(255)
+  pemilu_id Int    @db.UnsignedInt
+  tps_id    Int    @db.UnsignedInt
+  capres_id Int    @db.UnsignedInt
+  jumlah    Int    @default(0)
+  capres    capres @relation(fields: [capres_id], references: [id], onDelete: Cascade, map: "fkSUCAcapresID")
+  pemilu    pemilu @relation(fields: [pemilu_id], references: [id], onDelete: Cascade, map: "fkSUCApemiluID")
+  tps       tps    @relation(fields: [tps_id], references: [id], onDelete: Cascade, map: "fkSUCAtpsID")
+
+  @@index([capres_id], map: "fkSUCAcapresID")
+  @@index([pemilu_id], map: "fkSUCApemiluID")
+  @@index([tps_id], map: "fkSUCAtpsID")
+}
+
+model pemilu_user {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  pemilu_id Int    @db.UnsignedInt
+  user_id   String @db.VarChar(25)
+  pemilu    pemilu @relation(fields: [pemilu_id], references: [id], onDelete: Cascade, map: "fkPemiluUserPemiluID")
+  user      user   @relation(fields: [user_id], references: [username], onDelete: Cascade, map: "fkPemiluUserUserID")
+
+  @@index([pemilu_id], map: "fkPemiluUserPemiluID")
+  @@index([user_id], map: "fkPemiluUserUserID")
+}
+
+model permission_category {
+  id            Int      @id @default(autoincrement())
+  perm_group_id Int?
+  name          String?  @db.VarChar(100)
+  short_code    String?  @db.VarChar(100)
+  enable_view   Int?     @default(0)
+  enable_add    Int?     @default(0)
+  enable_edit   Int?     @default(0)
+  enable_delete Int?     @default(0)
+  created_at    DateTime @default(now()) @db.DateTime(0)
+  modified_at   DateTime @db.DateTime(0)
+
+  @@index([perm_group_id], map: "perm_group_id")
+}
+
+model permission_group {
+  id         Int      @id @default(autoincrement())
+  name       String?  @db.VarChar(100)
+  short_code String   @db.VarChar(100)
+  icon       String?  @db.VarChar(255)
+  is_active  Int?     @default(0)
+  system     Int
+  created_at DateTime @default(now()) @db.DateTime(0)
+}
+
+model provinsi {
+  id        String      @id @db.VarChar(25)
+  provinsi  String      @db.VarChar(100)
+  kabupaten kabupaten[]
+}
+
+model referensi_template {
+  id          Int       @id @default(autoincrement())
+  nama        String    @db.VarChar(20)
+  deskripsi   String    @db.VarChar(50)
+  baris_awal  Int
+  kolom_akhir Int
+  kolom       String    @db.LongText
+  created_at  DateTime  @db.DateTime(0)
+  created_by  Int
+  modified_at DateTime? @db.DateTime(0)
+  modified_by Int?
+
+  @@index([id], map: "id")
+}
+
+model roles {
+  id            Int      @id @default(autoincrement())
+  name          String?  @db.VarChar(100)
+  slug          String?  @db.VarChar(150)
+  is_active     Int?     @default(0)
+  is_system     Int      @default(0)
+  is_superadmin Int      @default(0)
+  created_at    DateTime @default(now()) @db.DateTime(0)
+  updated_at    DateTime @db.DateTime(0)
+}
+
+model roles_permissions {
+  id          Int      @id @default(autoincrement())
+  role_id     Int?
+  perm_cat_id Int?
+  can_view    Int?
+  can_add     Int?
+  can_edit    Int?
+  can_delete  Int?
+  created_at  DateTime @default(now()) @db.DateTime(0)
+}
+
+model settings {
+  id              Int      @id
+  name            String   @db.VarChar(100)
+  email           String   @db.VarChar(100)
+  phone           String   @db.VarChar(50)
+  address         String   @db.Text
+  date_format     String   @db.VarChar(50)
+  currency        String   @db.VarChar(50)
+  currency_symbol String   @db.VarChar(50)
+  timezone        String   @default("UTC") @db.VarChar(30)
+  logo            String   @db.VarChar(100)
+  kota            String   @db.VarChar(50)
+  propinsi        String   @db.VarChar(50)
+  zip             String   @db.VarChar(20)
+  is_active       String   @default("no") @db.VarChar(10)
+  created_at      DateTime @default(now()) @db.DateTime(0)
+  updated_at      DateTime @db.DateTime(0)
+  cron_secret_key String   @db.VarChar(100)
+  mobile_api_url  String   @db.Text
+  app_logo        String?  @db.VarChar(100)
+  status          Int?
+  footer          String?  @db.VarChar(100)
+  login_back      String   @db.VarChar(100)
+  login_logo      String?  @db.VarChar(100)
+  keyword         String?  @db.VarChar(100)
+  site_desc       String?  @db.VarChar(100)
+  home_title      String?  @db.VarChar(100)
+  site_title      String?  @db.VarChar(100)
+}
+
+model staff {
+  id                Int       @id @default(autoincrement())
+  photo             String?   @unique(map: "employee_id") @db.VarChar(200)
+  name              String    @db.VarChar(200)
+  contact_no        String    @db.VarChar(200)
+  email             String    @db.VarChar(200)
+  password          String    @db.VarChar(250)
+  user_id           Int
+  is_active         Int
+  verification_code String    @db.VarChar(100)
+  created_at        DateTime? @db.DateTime(0)
+  updated_at        DateTime? @db.DateTime(0)
+}
+
+model staff_roles {
+  id         Int      @id @default(autoincrement())
+  role_id    Int?
+  staff_id   Int?
+  is_active  Int?     @default(0)
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @db.DateTime(0)
+
+  @@index([role_id], map: "role_id")
+  @@index([staff_id], map: "staff_id")
+}
+
+model tps {
+  id                  Int                   @id @default(autoincrement()) @db.UnsignedInt
+  tps                 String                @db.VarChar(50)
+  desa_id             String                @db.Char(10)
+  alamat              String?               @default("-") @db.VarChar(255)
+  photo               String?               @default("#") @db.VarChar(255)
+  pemilu_dpt          pemilu_dpt[]
+  pemilu_final        pemilu_final[]
+  pemilu_suara_caleg  pemilu_suara_caleg[]
+  pemilu_suara_capres pemilu_suara_capres[]
+  desa                desa                  @relation(fields: [desa_id], references: [id], onDelete: Cascade, map: "fkTpsDesaID")
+  user_tps            user_tps[]
+
+  @@index([desa_id], map: "fkTpsDesaID")
+}
+
+model user_korcam {
+  id           Int       @id @default(autoincrement()) @db.UnsignedInt
+  user_id      String    @db.VarChar(25)
+  kecamatan_id String    @db.VarChar(25)
+  kecamatan    kecamatan @relation(fields: [kecamatan_id], references: [id], onDelete: Cascade, map: "fkUserKorcamKecamatanID")
+  user         user      @relation(fields: [user_id], references: [username], onDelete: Cascade, map: "unUserKorcamUserID")
+
+  @@index([kecamatan_id], map: "fkUserKorcamKecamatanID")
+  @@index([user_id], map: "unUserKorcamUserID")
+}
+
+model user_kordes {
+  id      Int    @id @default(autoincrement()) @db.UnsignedInt
+  user_id String @db.VarChar(25)
+  desa_id String @db.VarChar(25)
+  desa    desa   @relation(fields: [desa_id], references: [id], onDelete: Cascade, map: "fkUserKordesDesaID")
+  user    user   @relation(fields: [user_id], references: [username], onDelete: Cascade, map: "fkUserKordesUserID")
+
+  @@index([desa_id], map: "fkUserKordesDesaID")
+  @@index([user_id], map: "fkUserKordesUserID")
+}
+
+model user_mc {
+  id           Int       @id @default(autoincrement()) @db.UnsignedInt
+  user_id      String    @db.VarChar(25)
+  kabupaten_id String    @db.VarChar(25)
+  kabupaten    kabupaten @relation(fields: [kabupaten_id], references: [id], onDelete: Cascade, map: "fkUserMCKabupatenID")
+  user         user      @relation(fields: [user_id], references: [username], onDelete: Cascade, map: "fkUserMCUserID")
+
+  @@index([kabupaten_id], map: "fkUserMCKabupatenID")
+  @@index([user_id], map: "fkUserMCUserID")
+}
+
+model user_partai {
+  id           Int       @id @default(autoincrement()) @db.UnsignedInt
+  user_id      String    @db.VarChar(25)
+  parpol_id    String    @db.VarChar(25)
+  kabupaten_id String    @db.VarChar(25)
+  kabupaten    kabupaten @relation(fields: [kabupaten_id], references: [id], onDelete: Cascade, map: "fkUserKabupatenID")
+  parpol       parpol    @relation(fields: [parpol_id], references: [parpol], onDelete: Cascade, map: "fkUserParpolID")
+  user         user      @relation(fields: [user_id], references: [username], onDelete: Cascade, map: "fkUserPartaiUserID")
+
+  @@index([kabupaten_id], map: "fkUserKabupatenID")
+  @@index([parpol_id], map: "fkUserParpolID")
+  @@index([user_id], map: "fkUserPartaiUserID")
+}
+
+model user_pemilih {
+  id           Int       @id @default(autoincrement()) @db.UnsignedInt
+  user_id      String    @db.VarChar(25)
+  kabupaten_id String    @db.VarChar(25)
+  kabupaten    kabupaten @relation(fields: [kabupaten_id], references: [id], onDelete: Cascade, map: "fkUPKabupatenID")
+  user         user      @relation(fields: [user_id], references: [username], onDelete: Cascade, map: "fkUPUserID")
+
+  @@index([kabupaten_id], map: "fkUPKabupatenID")
+  @@index([user_id], map: "fkUPUserID")
+}
+
+model user_tps {
+  id      Int    @id @default(autoincrement()) @db.UnsignedInt
+  user_id String @db.VarChar(25)
+  tps_id  Int    @db.UnsignedInt
+  tps     tps    @relation(fields: [tps_id], references: [id], onDelete: Cascade, map: "fkUserTpsTpsID")
+  user    user   @relation(fields: [user_id], references: [username], onDelete: Cascade, map: "fkUserTpsUserID")
+
+  @@index([tps_id], map: "fkUserTpsTpsID")
+  @@index([user_id], map: "fkUserTpsUserID")
+}
+
+model userlog {
+  id             Int      @id @default(autoincrement())
+  user           String?  @db.VarChar(100)
+  role           String?  @db.VarChar(100)
+  ipaddress      String?  @db.VarChar(100)
+  user_agent     String?  @db.VarChar(500)
+  login_datetime DateTime @default(now()) @db.Timestamp(0)
+}
+
+model users {
+  id         Int      @id @default(autoincrement())
+  username   String   @db.VarChar(255)
+  password   String   @db.VarChar(255)
+  name       String   @db.VarChar(255)
+  role       String?  @db.VarChar(255)
+  last_login DateTime @default(now()) @db.DateTime(0)
+  is_active  String?  @db.VarChar(11)
+  app_key    String?  @db.VarChar(255)
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @default(now()) @db.DateTime(0)
+
+  @@index([username], map: "username")
+}
+
+model users_authentication {
+  id         Int      @id @default(autoincrement())
+  users_id   Int
+  token      String   @db.VarChar(255)
+  expired_at DateTime @default(now()) @db.DateTime(0)
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @default(now()) @db.DateTime(0)
+}
+
+enum caleg_jnskelamin {
+  Laki_laki @map("Laki-laki")
+  Perempuan
+}
+
+enum capres_detail_status {
+  CAPRES
+  CAWAPRES
+}
